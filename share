@@ -13,6 +13,7 @@ from zipfile import ZIP_DEFLATED
 
 DBPATH = "/home/dpetroff/code/python/fileshare/db.xml"
 FILESDIR = "/home/dpetroff/code/python/fileshare/files"
+WEBURL = "http://can3p.mine.nu:50020/fs/"
 
 def init_xml_db():
 	if not os.path.exists(DBPATH):
@@ -85,6 +86,7 @@ def add_file(options):
 
 	for fname in files:
 		if not os.path.exists(fname):
+			print("file " + fname + "does not exist")
 			continue
 		
 		fnode = xml.createElement("file")
@@ -97,14 +99,32 @@ def add_file(options):
 	with open(DBPATH, "w") as f:
 		f.write(xml.toprettyxml("\t", "\n"))
 
-def del_file(options): pass
+	print("download url: " + WEBURL + label)
+
+def del_file(options): 
+	if len(options) < 1:
+		usage();
+
+	xml = init_xml_db()
+	root = xml.firstChild
+
+	for el in root.getElementsByTagName("record"):
+		label = el.getAttribute("label")
+		if (label in options) or (len(options) == 1 and options[0] == '-a'):
+			if os.path.exists(FILESDIR + "/" + label):
+				shutil.rmtree(FILESDIR + "/" + label)
+				root.removeChild(el)
+
+	with open(DBPATH, "w") as f:
+		f.write(xml.toprettyxml("\t", "\n"))
+
 def list_files(options): 
 	if not os.path.exists(DBPATH):
 		print ("no db found. No files are shared ")
 		return
 
 def usage():
-	print ("Usage: share " + "|".join(valid_actions) + " [-name name] files")
+	print ("\tUsage: share " + "|".join(valid_actions) + " [-name name] files")
 	sys.exit()
 
 valid_actions = {
