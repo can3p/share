@@ -18,7 +18,7 @@ WEBURL = "http://can3p.mine.nu:50020/fs/"
 def init_xml_db():
 	if not os.path.exists(DBPATH):
 		#create document root
-		xmlstr = "<files></files>"
+		xmlstr = u"<files></files>"
 	else:
 		#the hack is needed because minidom adds extrawhitespaces in file
 		xmlstr = ""
@@ -30,7 +30,7 @@ def init_xml_db():
 		doc = minidom.parseString(xmlstr)
 	except Exception:
 		print("found empty xmldb, creating new one")
-		doc = minidom.parseString("<files></files>")
+		doc = minidom.parseString(u"<files></files>")
 	return doc
 
 def add_file(options):
@@ -55,7 +55,7 @@ def add_file(options):
 		new_id = int(root_max_id) + 1
 	else:
 		new_id = len(xml.getElementsByTagName("record")) + 1
-	root.setAttribute('maxid', str(new_id))
+	root.setAttribute(u'maxid', str(new_id))
 	timestamp = math.floor(time.time())
 
 	#we suggest that this method always generate unique values
@@ -78,26 +78,27 @@ def add_file(options):
 		archive.close()
 
 	#generate node for new record
-	new_node = xml.createElement("record")
-	new_node.setAttribute('id', str(new_id))
-	new_node.setAttribute('date', str(int(timestamp)))
-	new_node.setAttribute('label', label)
-	new_node.setAttribute('dlcount', '0')
+	new_node = xml.createElement(u"record")
+	new_node.setAttribute(u'id', str(new_id))
+	new_node.setAttribute(u'date', str(int(timestamp)))
+	new_node.setAttribute(u'label', label)
+	new_node.setAttribute(u'dlcount', '0')
 
 	for fname in files:
 		if not os.path.exists(fname):
 			print("file " + fname + "does not exist")
 			continue
 		
-		fnode = xml.createElement("file")
-		fnode.setAttribute("name", os.path.basename(fname))
-		fnode.setAttribute("origpath", os.path.dirname(fname))
+		fnode = xml.createElement(u"file")
+		fnode.setAttribute(u"name", os.path.basename(fname).decode("utf-8"))
+		fnode.setAttribute(u"origpath", os.path.dirname(fname).decode("utf-8"))
 		new_node.appendChild(fnode)
 	
 	root.appendChild(new_node)
 
 	with open(DBPATH, "w") as f:
-		f.write(xml.toprettyxml("\t", "\n"))
+		#f.write(xml.toprettyxml("\t", "\n","utf-8"))
+		f.write(xml.toxml("utf-8"))
 
 	print("download url: " + WEBURL + label)
 
@@ -122,6 +123,31 @@ def list_files(options):
 	if not os.path.exists(DBPATH):
 		print ("no db found. No files are shared ")
 		return
+
+	xml = init_xml_db()
+	root = xml.firstChild
+
+	idw = 4
+	urlw = len(WEBURL) + 10 
+	print("{0:{1}} {2:{3}} {4}".format('ID', idw, 'Url', urlw , 'Files'))
+
+	for el in root.getElementsByTagName("record"):
+		label = el.getAttribute("label")
+		downloadNum = el.getAttribute("dlcount")
+		id = el.getAttribute("id")
+
+		files = el.getElementsByTagName("file")
+		idprinted = False
+		for f in files:
+			fname = f.getAttribute("name")
+			if not idprinted:
+				print("{0:{1}} {2:{3}} {4}".format(id, idw, WEBURL + label, urlw , fname))
+				idprinted = True
+			else:
+				print("{0:{1}} {2:{3}} {4}".format("", idw, "", urlw , fname))
+				
+				
+	
 
 def usage():
 	print ("\tUsage: share " + "|".join(valid_actions) + " [-name name] files")
