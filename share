@@ -2,8 +2,35 @@
 
 import sys
 import os
+import time
+import math
+import hashlib
+import random
+import shutil
+from xml.dom import minidom
+from zipfile import ZipFile
+from zipfile import ZIP_DEFLATED
 
-options = sys.argv[1:]
+DBPATH = "/home/dpetroff/code/python/fileshare/db.xml"
+FILESDIR = "/home/dpetroff/code/python/fileshare/files"
+
+def init_xml_db():
+	if not os.path.exists(DBPATH):
+		#create document root
+		xmlstr = "<files></files>"
+	else:
+		#the hack is needed because minidom adds extrawhitespaces in file
+		xmlstr = ""
+		with open(DBPATH,"r") as f:
+			for line in f:
+				xmlstr += line.strip("\t\n")
+
+	try:
+		doc = minidom.parseString(xmlstr)
+	except Exception:
+		print("found empty xmldb, creating new one")
+		doc = minidom.parseString("<files></files>")
+	return doc
 
 def add_file(options):
 	zip_name =''
@@ -14,10 +41,67 @@ def add_file(options):
 		options.pop(0);
 		zip_name = options.pop(0)
 
-	print(os.getcwd())
+	files = map(os.path.abspath, options)
+	
+	if len(files) == 1:
+		print("sharing single file")
+
+	xml = init_xml_db()
+	root = xml.firstChild
+		
+	root_max_id = root.getAttribute('maxid')
+	if(root_max_id):
+		new_id = int(root_max_id) + 1
+	else:
+		new_id = len(xml.getElementsByTagName("record")) + 1
+	root.setAttribute('maxid', str(new_id))
+	timestamp = math.floor(time.time())
+
+	#we suggest that this method always generate unique values
+	label = hashlib.md5(str(timestamp*random.random())).hexdigest()[-5:]
+
+	#copy files and/or make an archive if needed
+	dirname = FILESDIR + "/" + label
+	os.mkdir(dirname)
+
+	if len(files) == 1:
+		shutil.copy(files[0], FILESDIR + "/" + label)
+	else:
+		#if len(files) > 1 we create a zip archive with all of them
+		zip_name = zip_name + ".zip" if len(zip_name) > 0 else label + ".zip"
+		zip_name = FILESDIR + "/" + label + "/" + zip_name
+
+		archive = ZipFile(zip_name, "w", ZIP_DEFLATED)
+		for fname in files:
+			archive.write(fname, os.path.basename(fname))
+		archive.close()
+
+	#generate node for new record
+	new_node = xml.createElement("record")
+	new_node.setAttribute('id', str(new_id))
+	new_node.setAttribute('date', str(int(timestamp)))
+	new_node.setAttribute('label', label)
+	new_node.setAttribute('dlcount', '0')
+
+	for fname in files:
+		if not os.path.exists(fname):
+			continue
+		
+		fnode = xml.createElement("file")
+		fnode.setAttribute("name", os.path.basename(fname))
+		fnode.setAttribute("origpath", os.path.dirname(fname))
+		new_node.appendChild(fnode)
+	
+	root.appendChild(new_node)
+
+	with open(DBPATH, "w") as f:
+		f.write(xml.toprettyxml("\t", "\n"))
 
 def del_file(options): pass
-def list_files(options): pass
+def list_files(options): 
+	if not os.path.exists(DBPATH):
+		print ("no db found. No files are shared ")
+		return
 
 def usage():
 	print ("Usage: share " + "|".join(valid_actions) + " [-name name] files")
@@ -29,13 +113,12 @@ valid_actions = {
 	'list': list_files
 }
 
+options = sys.argv[1:]
 if not len(options):
 	usage()
 
-
 cmd = options.pop(0)
-
-if (cmd not in valid_actions) or (len(options) < 1):
+if (cmd not in valid_actions):
 	usage()
 
 valid_actions[cmd](options)
