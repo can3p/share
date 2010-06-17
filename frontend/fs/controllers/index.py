@@ -23,7 +23,10 @@ class IndexController(BaseController):
             self.forbidden()
         else:
             #self._send_file( filespath + '/' + fname)
-            return  filespath + '/' + fname
+
+            import mimetypes
+
+            return  mimetypes.guess_type(filespath + '/' + fname)
 
     def forbidden (self):
         abort(403,'')
