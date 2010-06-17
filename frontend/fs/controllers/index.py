@@ -22,7 +22,8 @@ class IndexController(BaseController):
         if fname == None:
             self.forbidden()
         else:
-            self._send_file( filespath + '/' + fname)
+            #self._send_file( filespath + '/' + fname)
+            return  filespath + '/' + fname
 
     def forbidden (self):
         abort(403,'')
