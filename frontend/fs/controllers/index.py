@@ -4,6 +4,7 @@ from pylons import request, response, session, tmpl_context as c, url
 from pylons.controllers.util import abort, redirect
 
 from fs.lib.base import BaseController, render
+from fs.model.Xmldb import Xmldb
 
 log = logging.getLogger(__name__)
 
@@ -14,8 +15,14 @@ class IndexController(BaseController):
         #return render('/index.mako')
         # or, return a string
         from pylons import config
-        return config['xmldb_path']
-        return id
+
+        filespath = config['files_dir']
+        db = Xmldb(config['xmldb_path'])
+        fname = db.getFile(id)
+        if fname == None:
+            self.forbidden()
+        else:
+            self._send_file( filespath + '/' + fname)
 
     def forbidden (self):
         abort(403,'')
