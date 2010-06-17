@@ -1,3 +1,4 @@
+import os
 import logging
 
 from pylons import request, response, session, tmpl_context as c, url
@@ -22,26 +23,30 @@ class IndexController(BaseController):
         if fname == None:
             self.forbidden()
         else:
-            #self._send_file( filespath + '/' + fname)
+            return self._send_file( filespath + '/' + id + '/' + fname)
 
-            import mimetypes
-
-            return  mimetypes.guess_type(filespath + '/' + fname)
 
     def forbidden (self):
         abort(403,'')
 
 
     def _send_file(self, path):
-        user_filename = '_'.join(filepath.split('/')[-2:])
-        file_size = os.path.getsize(filepath)
+        user_filename = os.path.basename(path) 
+        file_size = os.path.getsize(path)
 
-        headers = [('Content-Disposition', 'attachment; filename=\"' + user_filename + '\"'),
-                    ('Content-Type', 'text/plain'),
-                    ('Content-Length', str(file_size))]
+        import mimetypes
+        mtype = mimetypes.guess_type(path)[0]
+        if mtype == None:
+            mtype = 'text/plain'
+
+        headers = [
+                ('Content-Disposition', 'attachment; filename=\"' + str(user_filename) + '\"'),
+                ('Content-Type', mtype),
+                ('Content-Length', str(file_size))
+                ]
 
         from paste.fileapp import FileApp
-        fapp = FileApp(filepath, headers=headers)
+        fapp = FileApp(path, headers=headers)
 
         return fapp(request.environ, self.start_response)
 
