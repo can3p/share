@@ -20,9 +20,14 @@ class IndexController(BaseController):
         filespath = config['files_dir']
         db = Xmldb(config['xmldb_path'])
         fname = db.getFile(id)
+        log.info("1")
+        log.debug("1")
+        log.debug("1")
+        log.debug("1")
         if fname == None:
             self.forbidden()
         else:
+            log.debug("fname =  %s", fname)
             return self._send_file( filespath + '/' + id + '/' + fname)
 
 
