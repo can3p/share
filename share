@@ -13,7 +13,8 @@ from zipfile import ZIP_DEFLATED
 
 DBPATH = "/home/dpetroff/code/python/fileshare/db.xml"
 FILESDIR = "/home/dpetroff/code/python/fileshare/files"
-WEBURL = "http://can3p.mine.nu:50020/fs/"
+#WEBURL = "http://can3p.mine.nu:50020/fs/"
+WEBURL = "http://localhost:81/fs/"
 
 def init_xml_db():
     if not os.path.exists(DBPATH):
@@ -66,9 +67,9 @@ def add_file(options):
     os.mkdir(dirname)
 
     outname = ''
-    if len(files) == 1:
+    if len(files) == 1 and len(zip_name) == 0:
         shutil.copy(files[0], FILESDIR + "/" + label)
-        outname = files[0]
+        outname = os.path.basename(files[0])
     else:
         #if len(files) > 1 we create a zip archive with all of them
         outname = zip_name + ".zip" if len(zip_name) > 0 else label + ".zip"
@@ -85,7 +86,7 @@ def add_file(options):
     new_node.setAttribute(u'date', str(int(timestamp)))
     new_node.setAttribute(u'label', label)
     new_node.setAttribute(u'dlcount', '0')
-    new_node.setAttribute(u'fname', outname)
+    new_node.setAttribute(u'fname', outname.decode("utf-8"))
 
     for fname in files:
         if not os.path.exists(fname):
@@ -100,8 +101,8 @@ def add_file(options):
     root.appendChild(new_node)
 
     with open(DBPATH, "w") as f:
-        #f.write(xml.toprettyxml("\t", "\n","utf-8"))
-        f.write(xml.toxml("utf-8"))
+        f.write(xml.toprettyxml("\t", "\n","utf-8"))
+        #f.write(xml.toxml("utf-8"))
 
     print("download url: " + WEBURL + label)
 
@@ -132,7 +133,8 @@ def list_files(options):
 
     idw = 4
     urlw = len(WEBURL) + 10 
-    print("{0:{1}} {2:{3}} {4}".format('ID', idw, 'Url', urlw , 'Files'))
+    dlcountw = 8
+    print("{0:{1}} {2:{3}} {4:{5}} {6}".format('ID', idw, 'Url', urlw, 'dlcount', dlcountw, 'Files'))
 
     for el in root.getElementsByTagName("record"):
         label = el.getAttribute("label")
@@ -144,10 +146,10 @@ def list_files(options):
         for f in files:
             fname = f.getAttribute("name")
             if not idprinted:
-                print("{0:{1}} {2:{3}} {4}".format(id, idw, WEBURL + label, urlw , fname))
+                print(u"{0:{1}} {2:{3}} {4:{5}} {6}".format(id, idw, WEBURL + label, urlw, downloadNum, dlcountw, fname))
                 idprinted = True
             else:
-                print("{0:{1}} {2:{3}} {4}".format("", idw, "", urlw , fname))
+                print(u"{0:{1}} {2:{3}} {4:{5}} {6}".format("", idw, "", urlw, '', dlcountw, fname))
                 
                 
     

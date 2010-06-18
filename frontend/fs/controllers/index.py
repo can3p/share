@@ -12,23 +12,17 @@ log = logging.getLogger(__name__)
 class IndexController(BaseController):
 
     def index(self, id):
-        # Return a rendered template
-        #return render('/index.mako')
-        # or, return a string
         from pylons import config
 
         filespath = config['files_dir']
         db = Xmldb(config['xmldb_path'])
         fname = db.getFile(id)
-        log.info("1")
-        log.debug("1")
-        log.debug("1")
-        log.debug("1")
         if fname == None:
             self.forbidden()
         else:
             log.debug("fname =  %s", fname)
-            return self._send_file( filespath + '/' + id + '/' + fname)
+            filepath = u"%s/%s/%s" % (filespath, id, fname)
+            return self._send_file( filepath)
 
 
     def forbidden (self):
@@ -37,7 +31,7 @@ class IndexController(BaseController):
 
     def _send_file(self, path):
         user_filename = os.path.basename(path) 
-        file_size = os.path.getsize(path)
+        file_size = os.path.getsize(path.encode("utf-8"))
 
         import mimetypes
         mtype = mimetypes.guess_type(path)[0]
@@ -45,13 +39,13 @@ class IndexController(BaseController):
             mtype = 'text/plain'
 
         headers = [
-                ('Content-Disposition', 'attachment; filename=\"' + str(user_filename) + '\"'),
+                ('Content-Disposition', 'attachment; filename=\"%s\"' % user_filename.encode("utf-8")),
                 ('Content-Type', mtype),
                 ('Content-Length', str(file_size))
                 ]
 
         from paste.fileapp import FileApp
-        fapp = FileApp(path, headers=headers)
+        fapp = FileApp(path.encode("utf-8"), headers=headers)
 
         return fapp(request.environ, self.start_response)
 
