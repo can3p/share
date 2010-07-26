@@ -122,7 +122,7 @@ def del_file(options):
                 shutil.rmtree(FILESDIR + "/" + label)
                 root.removeChild(el)
         else:
-            print("archive with id {1} was not found".format(id))
+            print("archive with id {0} was not found".format(id))
 
     with open(DBPATH, "w") as f:
         f.write(xml.toprettyxml("\t", "\n"))
