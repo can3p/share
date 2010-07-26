@@ -115,10 +115,14 @@ def del_file(options):
 
     for el in root.getElementsByTagName("record"):
         label = el.getAttribute("label")
-        if (label in options) or (len(options) == 1 and options[0] == '-a'):
+        id = el.getAttribute("id")
+
+        if (id in options) or (len(options) == 1 and options[0] == '-a'):
             if os.path.exists(FILESDIR + "/" + label):
                 shutil.rmtree(FILESDIR + "/" + label)
                 root.removeChild(el)
+        else:
+            print("archive with id {1} was not found".format(id))
 
     with open(DBPATH, "w") as f:
         f.write(xml.toprettyxml("\t", "\n"))
