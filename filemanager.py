@@ -5,13 +5,15 @@ import os
 class FileManager:
     @staticmethod
     def getDirContents(path):
-        if(os.isdir(path)):
+        if(os.path.isdir(path)):
             lst = os.listdir(path)
+            lst = [ path + '/' + el for el in lst ]
             subdirs = []
             for l in lst:
-                if( os.isdir(path  + "/" + l) ):
-                    subdirs.extend(get_dir_contents(path + "/" + l))
-            return subdirs
+                if( os.path.isdir(l) ):
+                    subdirs.extend(FileManager.getDirContents(l))
+            lst.extend(subdirs)
+            return lst
 
         return []
 
@@ -21,11 +23,14 @@ class FileManager:
         lst = []
         archive = ZipFile(name, "w", ZIP_DEFLATED)
         for fname in files:
-            lst.push(fname)
+            base = os.path.basename(fname)
+            baseDir = os.path.dirname(fname)
+
+            lst.append(os.path.basename(fname))
             archive.write(fname, os.path.basename(fname))
-            if(os.isdir(fname)):
+            if(os.path.isdir(fname)):
                 for ff in FileManager.getDirContents(fname):
-                    lst.push(ff)
+                    lst.append(ff.replace(baseDir, ''))
                     archive.write(ff, os.path.basename(ff))
         archive.close()
         return lst

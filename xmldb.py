@@ -98,7 +98,7 @@ class Xmldb:
                     "id" : id,
                     "label" : el.getAttribute("label"),
                     "downloadNum": el.getAttribute("dlcount"),
-                    "files": [ fel.getAttribute("name") for fel in el.getElementsByTagName("file") ]
+                    "files": [ fel.getAttribute('origpath') + fel.getAttribute("name") for fel in el.getElementsByTagName("file") ]
             }
 
         return res
