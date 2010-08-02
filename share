@@ -2,45 +2,15 @@
 
 import sys
 import os
-import time
-import math
-import hashlib
-import random
 import shutil
-from xml.dom import minidom
-from zipfile import ZipFile
-from zipfile import ZIP_DEFLATED
+
+from xmldb import Xmldb
+from filemanager import FileManager
 
 DBPATH = "/home/dpetroff/code/python/fileshare/db.xml"
 FILESDIR = "/home/dpetroff/code/python/fileshare/files"
 #WEBURL = "http://can3p.mine.nu:50020/fs/"
 WEBURL = "http://localhost:81/fs/"
-
-def init_xml_db():
-    if not os.path.exists(DBPATH):
-        #create document root
-        xmlstr = u"<files></files>"
-    else:
-        #the hack is needed because minidom adds extrawhitespaces in file
-        xmlstr = ""
-        with open(DBPATH,"r") as f:
-            for line in f:
-                xmlstr += line.strip("\t\n")
-
-    try:
-        doc = minidom.parseString(xmlstr)
-    except Exception:
-        print("found empty xmldb, creating new one")
-        doc = minidom.parseString(u"<files></files>")
-    return doc
-
-def get_dir_contents(path):
-    if(os.isdir(path):
-        lst = os.listdir(path)
-        subdirs = []
-        for l in lst:
-            if(os.isdir(path  + "/" + l):
-                subdirs.extend(get_dir_contents(path + "/" + l)
 
 def add_file(options):
     zip_name =''
@@ -53,22 +23,11 @@ def add_file(options):
 
     files = map(os.path.abspath, options)
     
-    if len(files) == 1:
+    if len(files) == 1 and not os.path.isdir(files[0]):
         print("sharing single file")
 
-    xml = init_xml_db()
-    root = xml.firstChild
-        
-    root_max_id = root.getAttribute('maxid')
-    if(root_max_id):
-        new_id = int(root_max_id) + 1
-    else:
-        new_id = len(xml.getElementsByTagName("record")) + 1
-    root.setAttribute(u'maxid', str(new_id))
-    timestamp = math.floor(time.time())
-
-    #we suggest that this method always generate unique values
-    label = hashlib.md5(str(timestamp*random.random())).hexdigest()[-5:]
+    db = Xmldb(DBPATH)
+    label = db.generateLabel()
 
     #copy files and/or make an archive if needed
     dirname = FILESDIR + "/" + label
@@ -78,42 +37,16 @@ def add_file(options):
     if len(files) == 1 and len(zip_name) == 0:
         shutil.copy(files[0], FILESDIR + "/" + label)
         outname = os.path.basename(files[0])
+        fileList = [ outname ]
     else:
         #if len(files) > 1 we create a zip archive with all of them
         outname = zip_name + ".zip" if len(zip_name) > 0 else label + ".zip"
         full_zip_name = FILESDIR + "/" + label + "/" + outname
 
-        archive = ZipFile(full_zip_name, "w", ZIP_DEFLATED)
-        for fname in files:
-            archive.write(fname, os.path.basename(fname))
-            if(os.isdir(fname)):
-                for(ff in get_dir_contents(fname)):
-                    archive.write(ff, os.path.basename(ff))
-        archive.close()
+        fileList = FileManager.createZipArchive(full_zip_name, files)
 
-    #generate node for new record
-    new_node = xml.createElement(u"record")
-    new_node.setAttribute(u'id', str(new_id))
-    new_node.setAttribute(u'date', str(int(timestamp)))
-    new_node.setAttribute(u'label', label)
-    new_node.setAttribute(u'dlcount', '0')
-    new_node.setAttribute(u'fname', outname.decode("utf-8"))
-
-    for fname in files:
-        if not os.path.exists(fname):
-            print("file " + fname + "does not exist")
-            continue
-        
-        fnode = xml.createElement(u"file")
-        fnode.setAttribute(u"name", os.path.basename(fname).decode("utf-8"))
-        fnode.setAttribute(u"origpath", os.path.dirname(fname).decode("utf-8"))
-        new_node.appendChild(fnode)
-    
-    root.appendChild(new_node)
-
-    with open(DBPATH, "w") as f:
-        f.write(xml.toprettyxml("\t", "\n","utf-8"))
-        #f.write(xml.toxml("utf-8"))
+    db.addRecord(label, outname, fileList)
+    db.close()
 
     print("download url: " + WEBURL + label)
 
@@ -121,51 +54,36 @@ def del_file(options):
     if len(options) < 1:
         usage();
 
-    xml = init_xml_db()
-    root = xml.firstChild
+    db = Xmldb(DBPATH)
+    for id, rec in db.getRecordsList().iteritems():
+        if (rec[ 'id' ] in options) or (len(options) == 1 and options[0] == '-a'):
+            if os.path.exists(FILESDIR + "/" + rec[ 'label' ]):
+                shutil.rmtree(FILESDIR + "/" + rec[ 'label' ])
+                db.delRecord( rec[ 'id' ] )
 
-    for el in root.getElementsByTagName("record"):
-        label = el.getAttribute("label")
-        id = el.getAttribute("id")
-
-        if (id in options) or (len(options) == 1 and options[0] == '-a'):
-            if os.path.exists(FILESDIR + "/" + label):
-                shutil.rmtree(FILESDIR + "/" + label)
-                root.removeChild(el)
-
-    with open(DBPATH, "w") as f:
-        f.write(xml.toprettyxml("\t", "\n"))
+    db.close()
 
 def list_files(options): 
     if not os.path.exists(DBPATH):
         print ("no db found. No files are shared ")
         return
 
-    xml = init_xml_db()
-    root = xml.firstChild
-
     idw = 4
     urlw = len(WEBURL) + 10 
     dlcountw = 8
     print("{0:{1}} {2:{3}} {4:{5}} {6}".format('ID', idw, 'Url', urlw, 'dlcount', dlcountw, 'Files'))
 
-    for el in root.getElementsByTagName("record"):
-        label = el.getAttribute("label")
-        downloadNum = el.getAttribute("dlcount")
-        id = el.getAttribute("id")
+    db = Xmldb(DBPATH)
 
-        files = el.getElementsByTagName("file")
+    for id, rec in db.getRecordsList().iteritems():
         idprinted = False
-        for f in files:
-            fname = f.getAttribute("name")
+
+        for fname in rec[ 'files' ]:
             if not idprinted:
-                print(u"{0:{1}} {2:{3}} {4:{5}} {6}".format(id, idw, WEBURL + label, urlw, downloadNum, dlcountw, fname))
+                print(u"{0:{1}} {2:{3}} {4:{5}} {6}".format(rec[ 'id' ], idw, WEBURL + rec[ 'label' ], urlw, rec[ 'downloadNum' ], dlcountw, fname))
                 idprinted = True
             else:
                 print(u"{0:{1}} {2:{3}} {4:{5}} {6}".format("", idw, "", urlw, '', dlcountw, fname))
-                
-                
-    
 
 def usage():
     print ("\tUsage: share " + "|".join(valid_actions) + " [-name name] files")
