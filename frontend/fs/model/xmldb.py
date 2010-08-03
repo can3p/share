@@ -87,21 +87,32 @@ class Xmldb:
         for el in nodes:
             self.removeChild(el)
 
-    def getRecordsList(self):
+    def getRecordsList(self, searchId = None):
         "return dictionary with records"
         res = {}
 
         for el in self.root.getElementsByTagName("record"):
             id = el.getAttribute("id")
 
-            res[ id ] = {
-                    "id" : id,
-                    "label" : el.getAttribute("label"),
-                    "downloadNum": el.getAttribute("dlcount"),
-                    "files": [ fel.getAttribute('origpath') + fel.getAttribute("name") for fel in el.getElementsByTagName("file") ]
+            hash = {
+                "id" : id,
+                "label" : el.getAttribute("label"),
+                "downloadNum": el.getAttribute("dlcount"),
+                "fname": el.getAttribute("fname"),
+                "files": [ fel.getAttribute('origpath') + fel.getAttribute("name") for fel in el.getElementsByTagName("file") ]
             }
 
-        return res
+            if searchId != None and searchId == id:
+                obj = {}
+                obj[id] = hash
+                return obj
+            else:
+                res[ id ] = hash
+
+        if searchId != None:
+            return None
+        else:
+            return res
 
     def getFile(self, id):
         #log.debug("searching for id = %s" % id)

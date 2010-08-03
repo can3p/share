@@ -65,25 +65,35 @@ def list_files(options):
         print ("no db found. No files are shared ")
         return
 
+    if len(options) > 0:
+        showSingle = True
+        singleId = options[0]
+    else:
+        singleId = None
+        showSingle = False
+    
+
     idw = 4
     urlw = len(WEBURL) + 10 
     dlcountw = 8
-    print("{0:{1}} {2:{3}} {4:{5}} {6}".format('ID', idw, 'Url', urlw, 'dlcount', dlcountw, 'Files'))
 
     db = Xmldb(DBPATH)
 
-    for id, rec in db.getRecordsList().iteritems():
-        idprinted = False
+    print("{0:{1}} {2:{3}} {4:{5}} {6}".format('ID', idw, 'Url', urlw, 'dlcount', dlcountw, 'File'))
+    for id, rec in db.getRecordsList(singleId).iteritems():
 
-        for fname in rec[ 'files' ]:
-            if not idprinted:
-                print(u"{0:{1}} {2:{3}} {4:{5}} {6}".format(rec[ 'id' ], idw, WEBURL + rec[ 'label' ], urlw, rec[ 'downloadNum' ], dlcountw, fname))
-                idprinted = True
-            else:
-                print(u"{0:{1}} {2:{3}} {4:{5}} {6}".format("", idw, "", urlw, '', dlcountw, fname))
+        print(u"{0:{1}} {2:{3}} {4:{5}} {6}".format(rec[ 'id' ], idw, WEBURL + rec[ 'label' ], urlw, rec[ 'downloadNum' ], dlcountw, rec[ "fname" ]))
+
+        if showSingle:
+            print("File list:")
+            for fname in rec[ 'files' ]:
+                print("\t" + fname)
+
 
 def usage():
-    print ("\tUsage: share " + "|".join(valid_actions) + " [-name name] files")
+    print ("\tUsage: share add [-name name] files")
+    print ("\tUsage: share del [-a] [ids] ")
+    print ("\tUsage: share list [id] ")
     sys.exit()
 
 valid_actions = {
