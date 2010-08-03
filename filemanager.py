@@ -1,6 +1,7 @@
 from zipfile import ZipFile
 from zipfile import ZIP_DEFLATED
 import os
+from ConfigParser import ConfigParser
 
 class FileManager:
     @staticmethod
@@ -34,3 +35,30 @@ class FileManager:
                     archive.write(ff, os.path.basename(ff))
         archive.close()
         return lst
+
+    @staticmethod
+    def readConfig(homeDir):
+        systemIni = "/etc/share.ini"
+        homeIni = homeDir + "/share.ini"
+
+        iniFname = systemIni
+        if not os.path.exists(iniFname):
+            if not os.path.exists(homeIni):
+                raise Exception("No configuration file found!")
+            iniFname = homeIni
+
+        parser = ConfigParser({
+                "sharedir" : homeDir
+            })
+
+        parser.readfp(open(iniFname))
+
+        db = parser.get('global','db')
+        fdir = parser.get('global','filesdir')
+        url = parser.get('global','weburl')
+
+        print(db)
+        print(fdir)
+        print(url)
+
+        return (db, fdir, url)

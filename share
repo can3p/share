@@ -7,10 +7,7 @@ import shutil
 from xmldb import Xmldb
 from filemanager import FileManager
 
-DBPATH = "/home/dpetroff/code/python/fileshare/db.xml"
-FILESDIR = "/home/dpetroff/code/python/fileshare/files"
-#WEBURL = "http://can3p.mine.nu:50020/fs/"
-WEBURL = "http://localhost:81/fs/"
+( DBPATH, FILESDIR, WEBURL ) = FileManager.readConfig(os.path.dirname(os.path.abspath(__file__)))
 
 def add_file(options):
     zip_name =''
