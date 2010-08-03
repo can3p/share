@@ -9,6 +9,8 @@ import fs.lib.app_globals as app_globals
 import fs.lib.helpers
 from fs.config.routing import make_map
 
+from fs.lib.filemanager import FileManager
+
 def load_environment(global_conf, app_conf):
     """Configure the Pylons environment via the ``pylons.config``
     object
@@ -44,5 +46,8 @@ def load_environment(global_conf, app_conf):
 
     # CONFIGURATION OPTIONS HERE (note: all config options will override
     # any Pylons config options)
+    iniHome = os.path.dirname(os.path.dirname( root ))
+
+    config['xmldb_path'], config['files_dir'], weburl = FileManager.readConfig(iniHome)
     
     return config

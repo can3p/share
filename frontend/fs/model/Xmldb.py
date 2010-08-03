@@ -10,6 +10,7 @@ class Xmldb:
         self.dbExist = True
         self.db = None
 
+        log.debug("db filename = %s" % dbpath)
         if not os.path.exists(dbpath):
             self.dbExist = False
             log.debug("xml db file does not exist")

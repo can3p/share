@@ -44,7 +44,7 @@ class FileManager:
         iniFname = systemIni
         if not os.path.exists(iniFname):
             if not os.path.exists(homeIni):
-                raise Exception("No configuration file found!")
+                raise Exception( "No configuration file found! %s" )
             iniFname = homeIni
 
         parser = ConfigParser({
@@ -56,9 +56,5 @@ class FileManager:
         db = parser.get('global','db')
         fdir = parser.get('global','filesdir')
         url = parser.get('global','weburl')
-
-        print(db)
-        print(fdir)
-        print(url)
 
         return (db, fdir, url)
