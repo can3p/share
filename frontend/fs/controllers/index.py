@@ -5,7 +5,7 @@ from pylons import request, response, session, tmpl_context as c, url
 from pylons.controllers.util import abort, redirect
 
 from fs.lib.base import BaseController, render
-from fs.model.Xmldb import Xmldb
+from fs.model.xmldb import Xmldb
 
 log = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ class IndexController(BaseController):
         filespath = config['files_dir']
         db = Xmldb(config['xmldb_path'])
         fname = db.getFile(id)
+        db.close()
         if fname == None:
             self.forbidden()
         else:

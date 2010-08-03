@@ -102,3 +102,20 @@ class Xmldb:
             }
 
         return res
+
+    def getFile(self, id):
+        #log.debug("searching for id = %s" % id)
+        fid = str(id).strip()
+        if (len(fid) != 5): #all ids are exactly 5 chars long
+            return None
+
+        for rec in self.root.getElementsByTagName('record'):
+            testid = rec.getAttribute('label')
+            #log.debug("testid = %s" % testid)
+            if testid == fid:
+                count = int(rec.getAttribute('dlcount')) + 1
+                fname = rec.getAttribute('fname')
+                rec.setAttribute('dlcount', str(count))
+
+                return fname
+        return None

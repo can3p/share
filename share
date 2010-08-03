@@ -4,7 +4,7 @@ import sys
 import os
 import shutil
 
-from xmldb import Xmldb
+from frontend.fs.model.xmldb import Xmldb
 from frontend.fs.lib.filemanager import FileManager
 
 ( DBPATH, FILESDIR, WEBURL ) = FileManager.readConfig(os.path.dirname(os.path.abspath(__file__)))
