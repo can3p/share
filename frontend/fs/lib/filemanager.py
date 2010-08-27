@@ -32,7 +32,8 @@ class FileManager:
             if(os.path.isdir(fname)):
                 for ff in FileManager.getDirContents(fname):
                     lst.append(ff.replace(baseDir, ''))
-                    archive.write(ff, os.path.basename(ff))
+                    archive.write(ff)
+                    print("adding %s" % ff)
         archive.close()
         return lst
 

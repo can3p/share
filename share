@@ -89,17 +89,30 @@ def list_files(options):
             for fname in rec[ 'files' ]:
                 print("\t" + fname)
 
+def test_zip(options):
+    if(len(options) < 2):
+        usage()
+
+    arcname = options[0]
+    if not arcname[-4] == '.zip':
+        arcname = arcname + '.zip'
+
+    files = options[1:]
+    fileList = FileManager.createZipArchive(arcname, files)
+
 
 def usage():
     print ("\tUsage: share add [-name name] files")
     print ("\tUsage: share del [-a] [ids] ")
     print ("\tUsage: share list [id] ")
+    print ("\tUsage: share zip arcname files ")
     sys.exit()
 
 valid_actions = {
     'add': add_file, 
     'del': del_file, 
-    'list': list_files
+    'list': list_files,
+	'zip': test_zip
 }
 
 options = sys.argv[1:]
