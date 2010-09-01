@@ -30,7 +30,7 @@ class Xmldb:
 
     def close(self):
         with open(self.fname, "w") as f:
-            f.write(self.doc.toprettyxml("\t", "\n"))
+            f.write(self.doc.toprettyxml("\t", "\n").encode('utf-8'))
 
     def getMaxID(self):
         root_max_id = self.root.getAttribute('maxid')
@@ -91,6 +91,11 @@ class Xmldb:
         "return dictionary with records"
         res = {}
 
+        def makeFname(origPath, fname):
+            sep = "/" if len(origPath) > 0 else ""
+
+            return origPath + sep + fname
+
         for el in self.root.getElementsByTagName("record"):
             id = el.getAttribute("id")
 
@@ -99,7 +104,7 @@ class Xmldb:
                 "label" : el.getAttribute("label"),
                 "downloadNum": el.getAttribute("dlcount"),
                 "fname": el.getAttribute("fname"),
-                "files": [ fel.getAttribute('origpath') + fel.getAttribute("name") for fel in el.getElementsByTagName("file") ]
+                "files": [ makeFname(fel.getAttribute('origpath'), fel.getAttribute("name")) for fel in el.getElementsByTagName("file") ]
             }
 
             if searchId != None and searchId == id:

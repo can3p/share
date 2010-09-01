@@ -2,6 +2,7 @@ from zipfile import ZipFile
 from zipfile import ZIP_DEFLATED
 import os
 from ConfigParser import ConfigParser
+import re
 
 class FileManager:
     @staticmethod
@@ -24,10 +25,10 @@ class FileManager:
         lst = []
         archive = ZipFile(name, "w", ZIP_DEFLATED)
         for fname in files:
-            base = os.path.basename(fname)
-            baseDir = os.path.dirname(fname)
+            base = re.sub("^/", "", os.path.basename(fname))
+            baseDir = os.path.dirname(fname) + "/"
 
-            lst.append(os.path.basename(fname))
+            lst.append(base)
             archive.write(fname, os.path.basename(fname))
             if(os.path.isdir(fname)):
                 for ff in FileManager.getDirContents(fname):
