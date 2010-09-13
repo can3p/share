@@ -29,11 +29,11 @@ class FileManager:
             baseDir = os.path.dirname(fname) + "/"
 
             lst.append(base)
-            archive.write(fname, os.path.basename(fname))
+            archive.write(fname, base)
             if(os.path.isdir(fname)):
                 for ff in FileManager.getDirContents(fname):
                     lst.append(ff.replace(baseDir, ''))
-                    archive.write(ff)
+                    archive.write(ff, ff.replace(baseDir, ''))
                     print("adding %s" % ff)
         archive.close()
         return lst
